@@ -1,0 +1,14 @@
+cards_played:
+  - 4♥ Bonus Foil
+  - 2♦ Mult Holographic
+  - 3♦ Glass Polychrome
+  - 9♥ Wild
+  - J♥ Steel
+
+cards_held_in_hand:
+  - K♠ Steel Foil
+  - 7♠ Steel Holographic
+  - 3♠ Steel Polychrome
+
+jokers:
+- Smeared Joker
