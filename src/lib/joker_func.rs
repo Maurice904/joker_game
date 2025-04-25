@@ -5,12 +5,13 @@ use crate::{hand_func, jokers_effect, joker_keys, hand_struct::HandMetaData, jok
 fn check_clone(vec: &mut Vec<Joker>, card: &JokerCard, count: &mut usize, is_inde: bool, cur_i : usize) {
     if *count > 0 {
         if is_inde {
-            for i in cur_i - *count..cur_i {
-                vec[i] = card.joker.clone();
-            }
+            vec.iter_mut()
+                .skip(cur_i - *count)
+                .take(*count)
+                .for_each(|joker| *joker = card.joker);
         } else {
             for _ in 0..*count {
-                vec.push(card.joker.clone());
+                vec.push(card.joker);
             }
         }
         *count = 0;
@@ -78,7 +79,7 @@ pub fn group_jokers(round: &Round) -> JokerGroupData {
                 joker_map |= joker_keys::ABSTRACT_JOKER;
             }
             Joker::RaisedFist => {
-                on_hold_jokers.push(card.joker.clone());
+                on_hold_jokers.push(card.joker);
                 check_clone(&mut on_hold_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::RAISED_FIST;
             }
@@ -87,57 +88,57 @@ pub fn group_jokers(round: &Round) -> JokerGroupData {
                 joker_map |= joker_keys::BLACKBOARD;
             }
             Joker::Baron => {
-                on_hold_jokers.push(card.joker.clone());
+                on_hold_jokers.push(card.joker);
                 check_clone(&mut on_hold_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::BARON;
             }
             Joker::GreedyJoker => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::GREEDY_JOKER;
             }
             Joker::LustyJoker => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::LUSTY_JOKER;
             }
             Joker::WrathfulJoker => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::WRATHFUL_JOKER;
             }
             Joker::GluttonousJoker => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::GLUTTONOUS_JOKER;
             }
             Joker::Fibonacci => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::FIBONACCI;
             }
             Joker::ScaryFace => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::SCARY_FACE;
             }
             Joker::EvenSteven => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::EVEN_STEVEN;
             }
             Joker::OddTodd => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::ODD_TODD;
             }
             Joker::Photograph => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::PHOTOGRAPH;
             }
             Joker::SmileyFace => {
-                on_scored_jokers.push(card.joker.clone());
+                on_scored_jokers.push(card.joker);
                 check_clone(&mut on_scored_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::SMILEY_FACE;
             }
@@ -146,17 +147,17 @@ pub fn group_jokers(round: &Round) -> JokerGroupData {
                 joker_map |= joker_keys::FLOWER_POT;
             }
             Joker::Shortcut => {
-                hands_jokers.push(card.joker.clone());
+                hands_jokers.push(card.joker);
                 check_clone(&mut hands_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::SHORTCUT;
             }
             Joker::Mime => {
-                on_hold_retriggers.push(card.joker.clone());
+                on_hold_retriggers.push(card.joker);
                 check_clone(&mut on_hold_retriggers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::MIME;
             }
             Joker::FourFingers => {
-                hands_jokers.push(card.joker.clone());
+                hands_jokers.push(card.joker);
                 check_clone(&mut hands_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::FOUR_FINGERS;
             }
@@ -164,17 +165,17 @@ pub fn group_jokers(round: &Round) -> JokerGroupData {
                 joker_map |= joker_keys::PAREIDOLIA;
             }
             Joker::Splash => {
-                hands_jokers.push(card.joker.clone());
+                hands_jokers.push(card.joker);
                 check_clone(&mut hands_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::SPLASH;
             }
             Joker::SockAndBuskin => {
-                on_scored_retriggers.push(card.joker.clone());
+                on_scored_retriggers.push(card.joker);
                 check_clone(&mut on_scored_retriggers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::SOCK_AND_BUSKIN;
             }
             Joker::SmearedJoker => {
-                hands_jokers.push(card.joker.clone());
+                hands_jokers.push(card.joker);
                 check_clone(&mut hands_jokers, card, &mut clone_count, false, i);
                 joker_map |= joker_keys::SMEARED_JOKER;
             }
@@ -183,7 +184,7 @@ pub fn group_jokers(round: &Round) -> JokerGroupData {
                 joker_map |= joker_keys::BLUEPRINT;
             }
         }
-        inde_jokers.push(card.joker.clone());
+        inde_jokers.push(card.joker);
     }
     JokerGroupData {
         hands_jokers,
@@ -200,7 +201,7 @@ pub fn group_jokers(round: &Round) -> JokerGroupData {
 
 pub fn get_hand(round: &Round, joker_group_data: &JokerGroupData) -> (PokerHand, HandMetaData, HandMetaData) {
     let hand_data = HandMetaData::get_from_hand(&round.cards_played);
-    let (poker_hand, scoring_card_data) = hand_func::check_hand(&hand_data, &joker_group_data);
+    let (poker_hand, scoring_card_data) = hand_func::check_hand(&hand_data, joker_group_data);
     (poker_hand,scoring_card_data, hand_data)
 }
 

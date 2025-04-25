@@ -1,8 +1,8 @@
 use core::panic;
 
-use ortalib::{Card, Chips, Edition, Joker, JokerCard, Mult, PokerHand, Rank, Round, Suit};
+use ortalib::{Card, Chips, Edition, Joker, JokerCard, Mult, Rank, Round, Suit};
 
-use crate::{card_type, hand_struct::HandMetaData, joker_func, joker_struct::JokerGroupData, joker_keys};
+use crate::{card_type, hand_struct::HandMetaData, joker_struct::JokerGroupData, joker_keys};
 
 pub fn get_on_score(mut chips: Chips, mut mult: Mult, scoring_hand_data: &HandMetaData,joker_group_data: &JokerGroupData, explain: bool) -> (Chips, Mult)
 {
@@ -80,7 +80,7 @@ pub fn get_on_score(mut chips: Chips, mut mult: Mult, scoring_hand_data: &HandMe
     (chips, mult)
 }
 
-fn get_retrigger(card: &Card, jokers: &Vec<Joker>, all_face: bool) -> usize 
+fn get_retrigger(card: &Card, jokers: &[Joker], all_face: bool) -> usize 
 {
     let mut n = 1;
     for joker in jokers.iter() {
@@ -109,7 +109,16 @@ fn get_retrigger(card: &Card, jokers: &Vec<Joker>, all_face: bool) -> usize
     n
 }
 
-fn get_on_score_joker_effect(joker: &Joker, mut chips: Chips, mut mult: Mult, card: &Card, all_face: bool, has_smeared: bool, first_face: bool, explain: bool) -> (Chips, Mult) 
+fn get_on_score_joker_effect
+(
+    joker: &Joker, 
+    mut chips: Chips, 
+    mut mult: Mult, 
+    card: &Card, all_face: bool, 
+    has_smeared: bool, 
+    first_face: 
+    bool, explain: bool
+) -> (Chips, Mult) 
 {
     match joker {
         Joker::GreedyJoker => {
@@ -278,7 +287,7 @@ fn get_on_score_joker_effect(joker: &Joker, mut chips: Chips, mut mult: Mult, ca
     (chips, mult)
 }
 
-pub fn get_on_hold(mut chips: Chips, mut mult: Mult, joker_group_data: &JokerGroupData, cards_on_hand: &Vec<Card>, explain: bool) -> (Chips, Mult) 
+pub fn get_on_hold(mut chips: Chips, mut mult: Mult, joker_group_data: &JokerGroupData, cards_on_hand: &[Card], explain: bool) -> (Chips, Mult) 
 {
     let on_hold_jokers = &joker_group_data.on_hold_jokers;
     let on_hold_retriggers = &joker_group_data.on_hold_retriggers;
@@ -286,21 +295,19 @@ pub fn get_on_hold(mut chips: Chips, mut mult: Mult, joker_group_data: &JokerGro
     for card in cards_on_hand.iter() {
         min_rank = min_rank.min(card.rank as usize);
     }
-    let mut min_index = 0;
-    for i in 0..cards_on_hand.len() {
-        if cards_on_hand[i].rank as usize == min_rank {
-            min_index = i;
-        }
-    }
+
+    let min_index = cards_on_hand.iter()
+        .rposition(|card| card.rank as usize == min_rank)  // Use rposition instead of position
+        .unwrap_or(0);
 
     let mut use_fist = false;
-    for i in 0..cards_on_hand.len() 
+    for (i, card) in cards_on_hand.iter().enumerate() 
     {   
         if min_index == i 
         {
             use_fist = true;
         }
-        let card = &cards_on_hand[i];
+
         let mut loop_time = get_retrigger(card, on_hold_retriggers, false);
         while loop_time > 0
         {
@@ -326,7 +333,7 @@ pub fn get_on_hold(mut chips: Chips, mut mult: Mult, joker_group_data: &JokerGro
     (chips, mult)
 }
 
-fn perform_on_hold_joker_effect(on_hold_jokers: &Vec<Joker> ,mut chips: Chips, mut mult: Mult, card: &Card, use_fist: bool, explain: bool) -> (Chips, Mult) 
+fn perform_on_hold_joker_effect(on_hold_jokers: &[Joker] ,chips: Chips, mut mult: Mult, card: &Card, use_fist: bool, explain: bool) -> (Chips, Mult) 
 {
     for joker in on_hold_jokers.iter() 
     {
@@ -342,14 +349,11 @@ fn perform_on_hold_joker_effect(on_hold_jokers: &Vec<Joker> ,mut chips: Chips, m
                 
             }
             Joker::Baron => {
-                match card.rank {
-                    Rank::King => {
-                        mult *= 1.5;
-                        if explain {
-                            println!("Baron: x1.5 mult ({} x {})", chips, mult);
-                        }
+                if card.rank == Rank::King {
+                    mult *= 1.5;
+                    if explain {
+                        println!("Baron: x1.5 mult ({} x {})", chips, mult);
                     }
-                    _ => {}
                 }
             }
     
@@ -367,8 +371,8 @@ pub fn get_independent(mut chips: Chips, mut mult: Mult, round: &Round, joker_gr
     let inde_jokers = &joker_group_data.inde_jokers;
     let jokers = &round.jokers;
     let has_smeared = joker_group_data.contains(joker_keys::SMEARED_JOKER);
-    for i in 0..jokers.len() {
-        let joker_card = jokers.get(i).unwrap();
+    
+    for (joker_card, inde_joker) in jokers.iter().zip(inde_jokers.iter()) {
         if explain {
             if let Some(edition) = joker_card.edition {
                 match edition {
@@ -388,23 +392,17 @@ pub fn get_independent(mut chips: Chips, mut mult: Mult, round: &Round, joker_gr
         }
 
         
-        (chips, mult) = get_inde_joker_effect(&inde_jokers[i], chips, mult, hand_data, &round.cards_held_in_hand, &round.jokers,explain, has_smeared, scoring_hand_data);
+        (chips, mult) = get_inde_joker_effect(inde_joker, chips, mult, hand_data, &round.cards_held_in_hand, &round.jokers,explain, has_smeared, scoring_hand_data);
         
         if explain {
             if let Some(edition) = joker_card.edition {
-                match edition {
-                    Edition::Polychrome => {
-                        print!("{} {}", joker_card.joker, joker_card.edition.unwrap());
-                    }
-                    _ => {}
+                if edition == Edition::Polychrome {
+                    print!("{} {}", joker_card.joker, joker_card.edition.unwrap());
                 }
             }
         }
-        match joker_card.edition {
-            Some(Edition::Polychrome) => {
-                (chips, mult) = card_type::get_edition(chips, mult, joker_card.edition, explain);
-            }
-            _ => {}
+        if let Some(Edition::Polychrome) = joker_card.edition {
+            (chips, mult) = card_type::get_edition(chips, mult, joker_card.edition, explain);
         }
 
     }
@@ -412,7 +410,19 @@ pub fn get_independent(mut chips: Chips, mut mult: Mult, round: &Round, joker_gr
 }
 
 
-fn get_inde_joker_effect(joker: &Joker, mut chips: Chips, mut mult: Mult, hand_data: &HandMetaData, cards_on_hand: &Vec<Card>,jokers: & Vec<JokerCard>, explain: bool, has_smeared: bool, scoring_hand_data: &HandMetaData) -> (Chips, Mult) {
+fn get_inde_joker_effect
+(
+    joker: &Joker, 
+    mut chips: Chips, 
+    mut mult: Mult, 
+    hand_data: &HandMetaData, 
+    cards_on_hand: &[Card],
+    jokers: &[JokerCard], 
+    explain: bool, 
+    has_smeared: bool, 
+    scoring_hand_data: &HandMetaData
+) -> (Chips, Mult) 
+{
     let wild_count = hand_data.wild_count;
     let scoring_suit_count = &scoring_hand_data.suit_count;
     let scoring_color_count = &scoring_hand_data.color_count;
@@ -554,5 +564,4 @@ fn get_inde_joker_effect(joker: &Joker, mut chips: Chips, mut mult: Mult, hand_d
     }
     (chips, mult)
 }
-
 

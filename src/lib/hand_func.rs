@@ -12,28 +12,21 @@ pub fn check_flush(hand_data: &HandMetaData, jokers:&JokerGroupData) -> (bool, u
 {
     let suit_count = &hand_data.suit_count;
     let color_count = &hand_data.color_count;
-    let mut max_by_suit = 0;
-    let mut suit_pos = 0;
-    let mut max_by_color = 0;
-    let mut color_pos = 0;
 
-    for i in 0..4 
-    {
-        if suit_count[i] > max_by_suit 
-        {
-            max_by_suit = suit_count[i];
-            suit_pos = i;
-        }
-    }
+    let (suit_pos, max_by_suit) = suit_count
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, count)| *count)
+        .map(|(i, count)| (i, *count))
+        .unwrap_or((0, 0));
 
-    for i in 0..2 
-    {
-        if color_count[i] > max_by_color 
-        {
-            max_by_color = color_count[i];
-            color_pos = i;
-        }
-    }
+    let (color_pos, max_by_color) = color_count
+        .iter()
+        .enumerate()
+        .max_by_key(|(_, count)| *count)
+        .map(|(i, count)| (i, *count))
+        .unwrap_or((0, 0));
+
     if max_by_suit == 5 
     {
         (true, suit_pos as u8, 7)
@@ -108,35 +101,28 @@ pub fn check_flush_straight(hand_data: &HandMetaData, jokers: &JokerGroupData) -
     let rank_count = &hand_data.rank_count;
 
     let mut max_iter = 0;
-    let mut cur = 0;
+    let mut cur = if rank_count[12] > 0 { 1 } else { 0 };
     let shortcut = jokers.contains(joker_keys::SHORTCUT);
     let mut allow_gap = shortcut;
     let mut straight_end_at = 15;
-    if rank_count[12] > 0 
-    {
-        cur = 1;
-    }
-    for i in 0..13 {
-        if rank_count[i] > 0 
-        {
-            cur += 1;
-            allow_gap = shortcut;
-        } 
-        else if !allow_gap 
-        {
-            if cur > max_iter 
-            {
-                max_iter = cur;
-                straight_end_at = (i + 12)%13;
+
+    rank_count.iter()
+        .enumerate()
+        .for_each(|(i, &count)| {
+            if count > 0 {
+                cur += 1;
+                allow_gap = shortcut;
+            } else if !allow_gap {
+                if cur > max_iter {
+                    max_iter = cur;
+                    straight_end_at = (i + 12) % 13;
+                }
+                cur = 0;
+                allow_gap = shortcut;
+            } else {
+                allow_gap = false;
             }
-            cur = 0;
-            allow_gap = shortcut;
-        }
-        else 
-        {
-            allow_gap = false;
-        }
-    }   
+        });
 
     if cur > max_iter 
     {
@@ -198,18 +184,18 @@ pub fn check_flush_straight(hand_data: &HandMetaData, jokers: &JokerGroupData) -
         {
             if valid_cards.contains(&(card.rank as usize)) 
             {
-                output_cards.push(card.clone());
+                output_cards.push(*card);
                 valid_cards.retain(|x| *x != card.rank as usize);
             }
         }
         if is_flush
         {
-            let flush_output = add_flush(&card_played, suit, color);
+            let flush_output = add_flush(card_played, suit, color);
             for card in flush_output.iter() 
             {
                 if !output_cards.contains(card)
                 {
-                    output_cards.push(card.clone());
+                    output_cards.push(*card);
                 }
             }
             let mut output_data = HandMetaData::get_from_hand(&output_cards);
@@ -232,16 +218,14 @@ pub fn check_four(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (PokerHa
 {
     let rank_count = &hand_data.rank_count;
     let card_played = &hand_data.cards;
-    let mut max_count = 0;
-    let mut max_rank = 14;
-    for i in 0..13 
-    {
-        if rank_count[i] > max_count 
-        {
-            max_count = rank_count[i];
-            max_rank = i;
-        }
-    }
+
+    let (max_rank, max_count) = rank_count
+        .iter()
+        .enumerate()
+        .max_by_key(|&(_, count)| *count)  // Use explicit reference pattern
+        .map(|(i, count)| (i, *count))
+        .unwrap_or((14, 0));
+
     let (is_flush, suit, color) = check_flush(hand_data, jokers);
     let mut output_cards = Vec::new();
     if max_count == 4
@@ -254,9 +238,9 @@ pub fn check_four(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (PokerHa
         }
         for card in card_played.iter() 
         {
-            if card.rank as usize == max_rank as usize 
+            if card.rank as usize == max_rank 
             {
-                output_cards.push(card.clone());
+                output_cards.push(*card);
             }
         }
         let mut output_data = HandMetaData::get_from_hand(&output_cards);
@@ -272,7 +256,7 @@ pub fn check_four(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (PokerHa
             output_data.contains_flush = true;
             return (PokerHand::Flush, output_data);
         }
-        let mut output_data = HandMetaData::get_from_hand(&add_flush(&card_played, suit, color));
+        let mut output_data = HandMetaData::get_from_hand(&add_flush(card_played, suit, color));
         output_data.contains_flush = true;
         (PokerHand::Flush, output_data)
     } 
@@ -286,9 +270,9 @@ pub fn check_four(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (PokerHa
         }
         for card in card_played.iter() 
         {
-            if card.rank as usize == max_rank as usize 
+            if card.rank as usize == max_rank 
             {
-                output_cards.push(card.clone());
+                output_cards.push(*card);
             }
         }
         let output_data = HandMetaData::get_from_hand(&output_cards);
@@ -298,30 +282,25 @@ pub fn check_four(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (PokerHa
     {
         check_two_pairs(hand_data, jokers)
     }
-    else
+    else if jokers.contains(joker_keys::SPLASH)
     {
-        if jokers.contains(joker_keys::SPLASH)
-        {
-            return (PokerHand::HighCard, hand_data.clone());
-        }
-        else  
-        {
-            output_cards.push(card_played[0].clone());
-            for i in 1..card_played.len()
-            {
-                if card_played[i].rank as usize > output_cards[0].rank as usize 
-                {
-                    output_cards[0] = card_played[i].clone();
-                }
-            }
-            (PokerHand::HighCard, HandMetaData::get_from_hand(&output_cards))
-        }
+        return (PokerHand::HighCard, hand_data.clone());
+    }
+    else  
+    {
+        output_cards.push(
+            card_played.iter()
+                .max_by_key(|card| card.rank as usize)
+                .copied()
+                .unwrap_or(card_played[0])
+        );
+        (PokerHand::HighCard, HandMetaData::get_from_hand(&output_cards))
     }
 
 }
 
 
-pub fn add_flush(card_played: &Vec<Card>, suit:u8, color:u8) -> Vec<Card> 
+pub fn add_flush(card_played: &[Card], suit:u8, color:u8) -> Vec<Card> 
 {
     let mut output_cards = Vec::new();
     if suit != 7
@@ -331,12 +310,12 @@ pub fn add_flush(card_played: &Vec<Card>, suit:u8, color:u8) -> Vec<Card>
             match card.enhancement 
             {
                 Some(Enhancement::Wild) => {
-                    output_cards.push(card.clone());
+                    output_cards.push(*card);
                 }
                 _ => {
                     if card.suit as u8 == suit
                     {
-                        output_cards.push(card.clone());
+                        output_cards.push(*card);
                     }
                 }
             }
@@ -349,13 +328,13 @@ pub fn add_flush(card_played: &Vec<Card>, suit:u8, color:u8) -> Vec<Card>
             match card.enhancement 
             {
                 Some(Enhancement::Wild) => {
-                    output_cards.push(card.clone());
+                    output_cards.push(*card);
                 }
                 _ => {
                     let card_color = card.suit as u8 % 2;
-                    if card_color as u8 == color 
+                    if card_color == color 
                     {
-                        output_cards.push(card.clone());
+                        output_cards.push(*card);
                     }
                 }
             }
@@ -379,10 +358,10 @@ pub fn check_two_pairs(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (Po
         {
             if hand_data.rank_count[card.rank as usize] == 2
             {
-                output_cards.push(card.clone());
+                output_cards.push(*card);
             }
         }
-        return (PokerHand::TwoPair, HandMetaData::get_from_hand(&output_cards));
+        (PokerHand::TwoPair, HandMetaData::get_from_hand(&output_cards))
     }
     else if pair_count == 1
     {
@@ -395,7 +374,7 @@ pub fn check_two_pairs(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (Po
         {
             if hand_data.rank_count[card.rank as usize] == 2
             {
-                output_cards.push(card.clone());
+                output_cards.push(*card);
             }
         }
         return (PokerHand::Pair, HandMetaData::get_from_hand(&output_cards));
@@ -406,16 +385,65 @@ pub fn check_two_pairs(hand_data: &HandMetaData, jokers: &JokerGroupData) -> (Po
         {
             return (PokerHand::HighCard, hand_data.clone());
         }
-        let mut output_cards = Vec::new();
-        output_cards.push(card_played[0].clone());
-        for i in 1..card_played.len() 
-        {
-            if card_played[i].rank as usize > output_cards[0].rank as usize 
-            {
-                output_cards[0] = card_played[i].clone();
-            }
-        }
+        let output_cards = vec![
+            card_played.iter()
+                .max_by_key(|card| card.rank as usize)
+                .copied()
+                .unwrap_or(card_played[0])
+        ];
         (PokerHand::HighCard, HandMetaData::get_from_hand(&output_cards))
     }
     
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ortalib::{Card, Rank, Suit};
+
+    #[test]
+    fn test_high_card_normal() {
+        let cards = vec![
+            Card::new(Rank::Ten, Suit::Hearts, None, None),
+            Card::new(Rank::Five, Suit::Clubs, None, None),
+            Card::new(Rank::King, Suit::Diamonds, None, None),
+        ];
+        let hand_data = HandMetaData::get_from_hand(&cards);
+        let jokers = JokerGroupData::default();
+        
+        let (hand, result_data) = check_hand(&hand_data, &jokers);
+        
+        assert_eq!(hand, PokerHand::HighCard);
+        assert_eq!(result_data.cards[0].rank, Rank::King);
+    }
+
+    #[test]
+    fn test_high_card_with_splash() {
+        let cards = vec![
+            Card::new(Rank::Ten, Suit::Hearts, None, None),
+            Card::new(Rank::Five, Suit::Clubs, None, None),
+        ];
+        let hand_data = HandMetaData::get_from_hand(&cards);
+        let mut jokers = JokerGroupData::default();
+        jokers.joker_map |= joker_keys::SPLASH;
+        
+        let (hand, result_data) = check_hand(&hand_data, &jokers);
+        
+        assert_eq!(hand, PokerHand::HighCard);
+        assert_eq!(result_data.cards, cards); 
+    }
+
+    #[test]
+    fn test_high_card_single_card() {
+        let cards = vec![Card::new(Rank::Ace, Suit::Spades, None, None)];
+        let hand_data = HandMetaData::get_from_hand(&cards);
+        let jokers = JokerGroupData::default();
+        
+        let (hand, result_data) = check_hand(&hand_data, &jokers);
+        
+        assert_eq!(hand, PokerHand::HighCard);
+        assert_eq!(result_data.cards[0].rank, Rank::Ace);
+    }
 }

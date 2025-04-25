@@ -1,6 +1,6 @@
 use ortalib::{Card, Enhancement, Suit};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct HandMetaData {
     pub rank_count: [u8; 13],
     pub suit_count: [u8; 4],
@@ -11,7 +11,6 @@ pub struct HandMetaData {
     pub contains_flush: bool,
     pub contains_straight: bool,
 }
-
 
 impl HandMetaData {
 
@@ -102,4 +101,52 @@ impl HandMetaData {
         wild_count
     }
 
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ortalib::{Card, Rank, Suit, Enhancement};
+
+    #[test]
+    fn test_count_normal_cards() {
+        let cards = vec![
+            Card::new(Rank::Ace, Suit::Hearts, None, None),
+            Card::new(Rank::King, Suit::Spades, None, None),
+        ];
+        let mut rank_count = [0; 13];
+        let mut suit_count = [0; 4];
+        let mut color_count = [0; 2];
+        
+        let wild_count = HandMetaData::count_hands(&cards, &mut rank_count, &mut suit_count, &mut color_count);
+        
+        assert_eq!(wild_count, 0);
+        assert_eq!(rank_count[Rank::Ace as usize], 1);
+        assert_eq!(rank_count[Rank::King as usize], 1);
+        assert_eq!(suit_count[Suit::Hearts as usize], 1);
+        assert_eq!(suit_count[Suit::Spades as usize], 1);
+        assert_eq!(color_count[1], 1); // Red (Hearts)
+        assert_eq!(color_count[0], 1); // Black (Spades)
+    }
+
+    #[test]
+    fn test_count_wild_cards() {
+        let mut cards = vec![
+            Card::new(Rank::Two, Suit::Clubs, None, None),
+        ];
+        cards[0].enhancement = Some(Enhancement::Wild);
+        
+        let mut rank_count = [0; 13];
+        let mut suit_count = [0; 4];
+        let mut color_count = [0; 2];
+        
+        let wild_count = HandMetaData::count_hands(&cards, &mut rank_count, &mut suit_count, &mut color_count);
+        
+        assert_eq!(wild_count, 1);
+        assert_eq!(suit_count, [1, 1, 1, 1]); // All suits incremented
+        assert_eq!(color_count, [1, 1]); // Both colors incremented
+        assert_eq!(rank_count[Rank::Two as usize], 1);
+    }
 }

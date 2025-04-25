@@ -6,11 +6,11 @@ Please mark stages that are complete with an [X].
 Stages that are partially complete should be marked with a [?].
 Stages that are not complete should be left blank (like [ ]).
 
-> [ ] Stage 1 (Basic Scoring)
-> [ ] Stage 2 (Modifiers)
-> [ ] Stage 3 (Easy Jokers)
-> [ ] Stage 4 (Medium Jokers)
-> [ ] Stage 5 (Hard Jokers)
+> [X] Stage 1 (Basic Scoring)
+> [X] Stage 2 (Modifiers)
+> [X] Stage 3 (Easy Jokers)
+> [X] Stage 4 (Medium Jokers)
+> [X] Stage 5 (Hard Jokers)
 
 ## Design Excellence
 
@@ -18,16 +18,22 @@ If you have completed a "design excellence" task, please write what
 the task was below (note, it MUST be on the list in the assignment or
 approved by COMP6991 staff).
 
->
+> I made the "--explain" flag functionality similar to the ortalab --explain, and also added 
+>some tests
 
 Please write a paragraph or two (max. 250 words) describing how your design was
 influenced by this challenge, with specific reference to sections of your code.
 If you completed the "Pull Request" design excellence, please just leave a link
 to your PR.
 
->
->
->
+> I think at first I started the project in a sequential mindset, i.e doing all instructions step 
+> by step. Basically, I first group all the jokers by their scoring order using "group_jokers()", then
+> get the pokerhand and scoring card using "get_hand()" and finally calculating the score using
+> "get_score()", but later on I found out this kind of mindset made it a little bit hard to break make
+> code more modularily, which will be discussed more in the next section. So in order to make the
+> code more scalable and modular, in the last minute I introduce the "HandMetaData" struct and "JokerGroupData"
+> struct which help a lot with some repetitive operations, and I think I will use the later approach
+> which is kind of a more oop approach in the future.
 
 ## Design Limitations
 
@@ -35,7 +41,18 @@ If you made any design decisions which you now regret making; but don't to go ba
 let us know here. You can make up your design marks by acknowledging up to 5 things you would do
 differently now.
 
-> - TODO
+> The design I want to change most is how I find out the scoring card and its respective pokerhand.
+> it is in hand_func.rs. Right now it kind of check all the possible pokerhand form high to low sequentially
+> e.g first check if it is flush five and then go on to the next possible highest pokerhand. but later on
+> I find this method to be extremely curmbersome to modify. Since if i want to change one function's output
+> I need to change all related functions. If time given, I want to use another approach, e.g, I want
+> to check possible pokerhand separately. For example, if a hand is flush and is straight, it is a straight flush.
+> and if it is 2 pair and contains a three of a kind, it is full house, so on and so on. It might be a little
+> bit difficult to figure out the scoring card, but I think it is much more modular.
+
+> Another thing I want to have more is to expand trait for my "HandMetaData" and "JokerGroupData" struct
+> right now it can help eliminte some repetitive tasks but not all, I would love to see them have a more
+> roboust traits 
 
 ## Questions to the marker
 

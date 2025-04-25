@@ -1,4 +1,6 @@
 use ortalib::Joker;
+
+#[derive(Default)]
 pub struct JokerGroupData {
     pub hands_jokers: Vec<Joker>, 
     pub on_scored_jokers: Vec<Joker>, 
